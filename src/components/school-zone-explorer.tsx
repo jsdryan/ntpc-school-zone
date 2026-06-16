@@ -352,26 +352,26 @@ export default function SchoolZoneExplorer({
   return (
     <main className="min-h-screen bg-[#F7F7F8] text-[#111111]">
       <header className="border-b border-black bg-white">
-        <section className="grid-paper min-h-[320px] p-6 sm:p-10">
+        <section className="grid-paper px-6 py-5 sm:px-10 sm:py-6 lg:h-[220px]">
           <div className="max-w-5xl">
-            <div className="mb-10 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            <div className="mb-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
               <span>{dataset.metadata.revision}</span>
               <span>{formatEntryAgeRange(dataset.metadata.entryAge)}</span>
             </div>
-            <p className="mb-4 text-sm font-bold text-[#E4002B]">
+            <p className="mb-2 text-sm font-bold text-[#E4002B]">
               新北市公立{dataset.schoolKind}
             </p>
-            <h1 className="max-w-4xl text-left text-5xl font-bold leading-[0.95] tracking-normal text-black sm:text-7xl lg:text-8xl">
+            <h1 className="max-w-4xl text-left text-4xl font-bold leading-[0.95] tracking-normal text-black sm:text-5xl lg:text-6xl">
               學區查詢
             </h1>
-            <p className="mt-8 max-w-3xl text-base leading-7 sm:text-lg">
+            <p className="mt-4 max-w-4xl text-base leading-6">
               {`依據「${dataset.metadata.title}」建立，支援以行政區、學校、里、鄰與自由學區關鍵字查詢。`}
             </p>
           </div>
         </section>
       </header>
 
-      <section className="grid grid-cols-1 border-b border-black lg:h-[calc(100vh-320px)] lg:grid-cols-[320px_minmax(0,1fr)] lg:overflow-hidden">
+      <section className="grid grid-cols-1 border-b border-black lg:h-[calc(100vh-220px)] lg:grid-cols-[320px_minmax(0,1fr)] lg:overflow-hidden">
         <aside className="bg-white p-5 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:border-r lg:p-6">
           <div className="space-y-6">
             <div>
@@ -532,7 +532,7 @@ export default function SchoolZoneExplorer({
           className="min-w-0 scroll-mt-3 lg:min-h-0"
           aria-label="搜尋結果"
         >
-          <div className="grid min-h-[calc(100vh-320px)] grid-cols-1 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_430px]">
+          <div className="grid min-h-[calc(100vh-220px)] grid-cols-1 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_430px]">
             <div className="min-w-0 border-t border-black bg-[#F7F7F8] lg:flex lg:min-h-0 lg:flex-col lg:border-t-0 lg:border-r">
               <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-black bg-white px-5 py-4">
                 <div>
