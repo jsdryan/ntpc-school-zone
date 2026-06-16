@@ -527,9 +527,9 @@ function SchoolList({
                     </span>
                   ) : null}
                 </div>
-                {active ? null : (
+                <div className={active ? "hidden lg:block" : undefined}>
                   <SummaryText body={record.basicArea} query={query} />
-                )}
+                </div>
               </div>
             </button>
             {active ? (
