@@ -10,7 +10,13 @@ import {
   School,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import type {
   CitywideFreeSchool,
@@ -202,6 +208,7 @@ export default function SchoolZoneExplorer({
   const [query, setQuery] = useState("");
   const [district, setDistrict] = useState("全部行政區");
   const [mode, setMode] = useState<Mode>("all");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [activeSchoolIds, setActiveSchoolIds] = useState<
     Record<SchoolLevel, string>
   >({
@@ -214,6 +221,7 @@ export default function SchoolZoneExplorer({
     elementary: payload.levels.elementary.citywideFreeSchools[0]?.no ?? 0,
     juniorHigh: payload.levels.juniorHigh.citywideFreeSchools[0]?.no ?? 0,
   });
+  const resultsRef = useRef<HTMLElement>(null);
 
   const dataset = payload.levels[level];
   const normalizedQuery = normalize(query);
@@ -266,10 +274,52 @@ export default function SchoolZoneExplorer({
     ? filteredCitywide.length
     : filteredSchools.length;
 
+  function scrollToResults() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  function runSearch() {
+    setMobileFiltersOpen(false);
+
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
+    scrollToResults();
+  }
+
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    runSearch();
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter" || event.nativeEvent.isComposing) {
+      return;
+    }
+
+    event.preventDefault();
+    runSearch();
+  }
+
   function selectLevel(nextLevel: SchoolLevel) {
     setLevel(nextLevel);
     setDistrict("全部行政區");
     setMode("all");
+    setMobileFiltersOpen(false);
   }
 
   function selectSchool(id: string) {
@@ -284,6 +334,19 @@ export default function SchoolZoneExplorer({
     setQuery("");
     setDistrict("全部行政區");
     setMode("all");
+    setMobileFiltersOpen(false);
+  }
+
+  function updateDistrict(nextDistrict: string) {
+    setDistrict(nextDistrict);
+    setMobileFiltersOpen(false);
+    scrollToResults();
+  }
+
+  function updateMode(nextMode: Mode) {
+    setMode(nextMode);
+    setMobileFiltersOpen(false);
+    scrollToResults();
   }
 
   return (
@@ -331,7 +394,7 @@ export default function SchoolZoneExplorer({
               </div>
             </div>
 
-            <div>
+            <form role="search" onSubmit={submitSearch}>
               <label
                 className="mb-2 block text-sm font-bold"
                 htmlFor="school-zone-search"
@@ -345,8 +408,13 @@ export default function SchoolZoneExplorer({
                 <input
                   id="school-zone-search"
                   className="min-w-0 flex-1 px-3 text-base outline-none"
+                  type="search"
+                  enterKeyHint="search"
+                  inputMode="search"
+                  autoComplete="off"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={handleSearchKeyDown}
                   placeholder="輸入學校、里、鄰或行政區"
                 />
                 {query ? (
@@ -360,60 +428,110 @@ export default function SchoolZoneExplorer({
                   </button>
                 ) : null}
               </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold" htmlFor="district">
-                行政區
-              </label>
-              <select
-                id="district"
-                className="h-12 w-full border border-black bg-white px-3 text-base outline-none"
-                value={district}
-                onChange={(event) => setDistrict(event.target.value)}
-              >
-                <option>全部行政區</option>
-                {dataset.districts.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <p className="mb-2 text-sm font-bold">資料範圍</p>
-              <div className="grid border border-black">
-                {availableModes.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    className={`flex h-11 items-center justify-between border-b border-black px-3 text-left text-sm last:border-b-0 ${
-                      mode === item
-                        ? "bg-[#E4002B] font-bold text-white"
-                        : "bg-white hover:bg-[#F7F7F8]"
-                    }`}
-                    onClick={() => setMode(item)}
-                  >
-                    <span>{modeLabels[item]}</span>
-                    <ListFilter aria-hidden="true" size={16} strokeWidth={1.8} />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <FreeAreaExplainer />
+            </form>
 
             <button
               type="button"
-              className="flex h-11 w-full items-center justify-center gap-2 border border-black bg-white text-sm font-bold hover:bg-[#F7F7F8]"
-              onClick={resetFilters}
+              className="flex min-h-12 w-full items-center justify-between gap-3 border border-black bg-white px-3 text-left lg:hidden"
+              aria-expanded={mobileFiltersOpen}
+              onClick={() => setMobileFiltersOpen((current) => !current)}
             >
-              <X aria-hidden="true" size={16} strokeWidth={1.8} />
-              清除
+              <span>
+                <span className="block text-xs font-bold text-[#E4002B]">
+                  篩選條件
+                </span>
+                <span className="block text-sm font-bold">
+                  {district} · {modeLabels[mode]}
+                </span>
+              </span>
+              <ListFilter aria-hidden="true" size={18} strokeWidth={1.8} />
             </button>
+
+            <button
+              type="button"
+              className="flex min-h-12 w-full items-center justify-between gap-3 border border-black bg-black px-3 text-left text-white lg:hidden"
+              onClick={scrollToResults}
+            >
+              <span>
+                <span className="block text-xs font-bold text-[#E4002B]">
+                  搜尋結果
+                </span>
+                <span className="block text-sm font-bold">
+                  符合條件 {resultCount} 筆
+                </span>
+              </span>
+              <span className="text-sm font-bold">查看結果</span>
+            </button>
+
+            <div
+              className={`space-y-6 ${
+                mobileFiltersOpen ? "block" : "hidden"
+              } lg:block`}
+            >
+              <div>
+                <label
+                  className="mb-2 block text-sm font-bold"
+                  htmlFor="district"
+                >
+                  行政區
+                </label>
+                <select
+                  id="district"
+                  className="h-12 w-full border border-black bg-white px-3 text-base outline-none"
+                  value={district}
+                  onChange={(event) => updateDistrict(event.target.value)}
+                >
+                  <option>全部行政區</option>
+                  {dataset.districts.map((item) => (
+                    <option key={item}>{item}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-bold">資料範圍</p>
+                <div className="grid border border-black">
+                  {availableModes.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`flex h-11 items-center justify-between border-b border-black px-3 text-left text-sm last:border-b-0 ${
+                        mode === item
+                          ? "bg-[#E4002B] font-bold text-white"
+                          : "bg-white hover:bg-[#F7F7F8]"
+                      }`}
+                      onClick={() => updateMode(item)}
+                    >
+                      <span>{modeLabels[item]}</span>
+                      <ListFilter
+                        aria-hidden="true"
+                        size={16}
+                        strokeWidth={1.8}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <FreeAreaExplainer />
+
+              <button
+                type="button"
+                className="flex h-11 w-full items-center justify-center gap-2 border border-black bg-white text-sm font-bold hover:bg-[#F7F7F8]"
+                onClick={resetFilters}
+              >
+                <X aria-hidden="true" size={16} strokeWidth={1.8} />
+                清除
+              </button>
+            </div>
           </div>
         </aside>
 
-        <section className="min-w-0 lg:min-h-0">
+        <section
+          ref={resultsRef}
+          className="min-w-0 scroll-mt-3 lg:min-h-0"
+          aria-label="搜尋結果"
+        >
           <div className="grid min-h-[calc(100vh-320px)] grid-cols-1 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_430px]">
             <div className="min-w-0 border-t border-black bg-[#F7F7F8] lg:flex lg:min-h-0 lg:flex-col lg:border-t-0 lg:border-r">
               <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-black bg-white px-5 py-4">
@@ -422,9 +540,6 @@ export default function SchoolZoneExplorer({
                   <p className="text-sm">
                     {district}，符合條件 {resultCount} 筆
                   </p>
-                </div>
-                <div className="text-4xl font-bold leading-none text-[#E4002B] tabular-nums">
-                  {String(resultCount).padStart(2, "0")}
                 </div>
               </div>
 
